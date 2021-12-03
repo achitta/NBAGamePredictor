@@ -1,5 +1,9 @@
 import csv
 from datetime import date
+"""
+Extract the columns that we will be using for analysis and disregard all other information
+and add season column
+"""
 
 def dateToSeason(date_string):
     date_obj = date.fromisoformat(date_string)
