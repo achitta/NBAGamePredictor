@@ -1,5 +1,4 @@
 import csv
-from os import stat
 from sklearn.model_selection import train_test_split
 import numpy as np
 import statistics
@@ -88,12 +87,12 @@ with open('cleaned_data/box_scores.csv', newline='') as csvfile:
                 team2Location = 1 if row["opptLoc"] == "Home" else 0
 
                 X.append([team1Location] + diff_vector1)
-                X.append([team2Location] + diff_vector2)
+                # X.append([team2Location] + diff_vector2)
                 
                 result1 = float(row["teamPTS"]) - float(row["opptPTS"])
-                result2 = float(row["opptPTS"]) - float(row["teamPTS"])
+                # result2 = float(row["opptPTS"]) - float(row["teamPTS"])
                 Y.append(result1)
-                Y.append(result2)
+                # Y.append(result2)
             count += 1
 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.25, random_state=42)
@@ -102,7 +101,6 @@ train_means = []
 train_std = []
 for i, row in enumerate(X_train_transpose):
     mean = sum(row) / len(row)
-    print(mean)
     std_dev = statistics.pstdev(row)
     train_means.append(mean)
     train_std.append(std_dev)
@@ -110,7 +108,6 @@ for i, row in enumerate(X_train_transpose):
         z_score = (val - mean) / std_dev
         X_train_transpose[i][j] = z_score
 
-print(train_means)
 X_train_normalized = np.transpose(X_train_transpose)
 
 X_test_transpose = np.transpose(X_test)
@@ -123,11 +120,11 @@ for i, row in enumerate(X_test_transpose):
 
 X_test_normalized = np.transpose(X_test_transpose)
 
-# neigh = KNeighborsClassifier(n_neighbors=3, weights="distance")
-# neigh.fit(X_train_normalized, Y_train)
-# predictions = neigh.predict(X_test_normalized)
-clf = LogisticRegression(random_state=0).fit(X_train_normalized, Y_train)
-predictions = clf.predict(X_test_normalized)
+neigh = KNeighborsClassifier(n_neighbors=3, weights="distance")
+neigh.fit(X_train_normalized, Y_train)
+predictions = neigh.predict(X_test_normalized)
+# clf = LogisticRegression(random_state=0).fit(X_train_normalized, Y_train)
+# predictions = clf.predict(X_test_normalized)
 
 
 num_correct = 0
