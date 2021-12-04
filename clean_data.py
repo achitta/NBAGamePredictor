@@ -13,6 +13,7 @@ def dateToSeason(date_string):
         year = year + 1
     return year
 
+
 columns = ['gmDate', 'teamAbbr', 'teamLoc', 'teamRslt', 'teamPTS', 'teamAST', 'teamTO', 'teamSTL', 'teamBLK', 'teamPF', 'teamFGA', 'teamFGM', 'teamFG%', 'team2PA', 'team2PM', 'team2P%', 'team3PA', 'team3PM', 'team3P%', 'teamFTA', 'teamFTM', 'teamFT%', 'teamORB', 'teamDRB', 'teamTRB', 'teamTREB%', 'teamASST%', 'teamTS%', 'teamEFG%', 'teamOREB%', 'teamDREB%', 'teamTO%', 'teamSTL%', 'teamBLK%', 'teamOrtg', 'teamDrtg', 'teamEDiff', 'teamAST/TO', 'teamSTL/TO', 'opptAbbr', 'opptLoc', 'opptRslt', 'opptPTS', 'opptAST', 'opptTO', 'opptSTL', 'opptBLK', 'opptPF', 'opptFGA', 'opptFGM', 'opptFG%', 'oppt2PA', 'oppt2PM', 'oppt2P%', 'oppt3PA', 'oppt3PM', 'oppt3P%', 'opptFTA', 'opptFTM', 'opptFT%', 'opptORB', 'opptDRB', 'opptTRB', 'opptTREB%', 'opptASST%', 'opptTS%', 'opptEFG%', 'opptOREB%', 'opptDREB%', 'opptTO%', 'opptSTL%', 'opptBLK%', 'opptOrtg', 'opptDrtg', 'opptEDiff', 'opptAST/TO', 'opptSTL/TO', 'poss', 'pace']
 with open('cleaned_data/box_scores.csv', 'w') as f:
     header = ['season'] + columns
