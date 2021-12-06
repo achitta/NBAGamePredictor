@@ -65,6 +65,12 @@ def init_season_records(season, team):
 def init_season_records_against_teams(season, team):
     season_records_against_teams[(season, team,)] = {}
 
+def init_season_records_against_teams_for_matchup(season, team, oppTeam):
+    season_records_against_teams[(season, team,)][oppTeam] = {
+        "wins": 0,
+        "losses": 0,
+    }
+
 
 def get_average(team_name, key):
     vals = running_totals[team_name][key]
@@ -156,11 +162,12 @@ def get_win_pct(season, team,):
     return wins / (wins + losses)
 
 def get_win_pct_home_against_away(season, home_team, visitor_team):
-    if visitor_team not in season_records_against_teams[(season, home_team,)]:
-        season_records_against_teams[(season, home_team,)][visitor_team] = {
-            "wins": 0,
-            "losses": 0
-        }
+    # if visitor_team not in season_records_against_teams[(season, home_team,)]:
+    #     init_season_records_against_teams(season, home_team, visitor_team)
+
+    # if home_team not in season_records_against_teams[(season, visitor_team,)]:
+    #     init_season_records_against_teams(season, visitor_team, home_team)
+
     wins = season_records_against_teams[(season, home_team,)][visitor_team]['wins']
     losses = season_records_against_teams[(season, home_team,)][visitor_team]['losses']
     if wins + losses == 0:
@@ -222,12 +229,18 @@ def update_season_records(home_team, visitor_team, season, result):
         season_records[(season, home_team,)]['losses'] += 1
 
 def update_season_records_against_teams(home_team, visitor_team, season, result):
+    # if visitor_team not in season_records_against_teams[(season, home_team,)]:
+    #     init_season_records_against_teams(season, home_team, visitor_team)
+
+    # if home_team not in season_records_against_teams[(season, visitor_team,)]:
+    #     init_season_records_against_teams(season, visitor_team, home_team)
+
     if result > 0:
-        season_records[(season, home_team,)][visitor_team]['wins'] += 1
-        season_records[(season, visitor_team,)][home_team]['losses'] += 1
+        season_records_against_teams[(season, home_team,)][visitor_team]['wins'] += 1
+        season_records_against_teams[(season, visitor_team,)][home_team]['losses'] += 1
     else:
-        season_records[(season, visitor_team,)][home_team]['wins'] += 1
-        season_records[(season, home_team,)][visitor_team]['losses'] += 1
+        season_records_against_teams[(season, visitor_team,)][home_team]['wins'] += 1
+        season_records_against_teams[(season, home_team,)][visitor_team]['losses'] += 1
 
 def season_from_game_date(game_date):
     gm_date = datetime.datetime.fromisoformat(game_date)
@@ -269,11 +282,18 @@ with open("features.csv", 'w') as outfile:
                 init_season_records_against_teams(season, home_team)
             if (season, visitor_team,) not in season_records_against_teams:
                 init_season_records_against_teams(season, visitor_team)
+            
+            if visitor_team not in season_records_against_teams[(season, home_team,)]:
+                init_season_records_against_teams_for_matchup(season, home_team, visitor_team)
+
+            if home_team not in season_records_against_teams[(season, visitor_team,)]:
+                init_season_records_against_teams_for_matchup(season, visitor_team, home_team)
 
             if (season, home_team,) not in season_records:
                 init_season_records(season, home_team)
             if (season, visitor_team,) not in season_records:
                 init_season_records(season, visitor_team)
+
 
             # Compute ppg
             home_pts_total = get_average_pts_per_game(home_team)
@@ -328,3 +348,8 @@ with open("features.csv", 'w') as outfile:
             update_running_totals(game_date, home_team, home_pts, visitor_team, visitor_pts, 10)
             update_season_records(home_team, visitor_team, season, result)
             update_season_records_against_teams(home_team, visitor_team, season, result)
+
+            # if flag:
+            #     print("AFTER UPDATE")
+            #     print(season_records_against_teams[("2016", "Golden State Warriors",)]["Memphis Grizzlies"])
+            #     print(season_records_against_teams[("2016", "Memphis Grizzlies",)]["Golden State Warriors"])
