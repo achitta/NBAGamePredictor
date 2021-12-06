@@ -1,13 +1,12 @@
 def warn(*args, **kwargs):
     pass
 import warnings
-from numpy.lib.function_base import average
-
-from sklearn import naive_bayes
 warnings.warn = warn
-
+from numpy import mean, std
 import csv
 import sys
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
 import numpy as np
 from scipy import stats
@@ -17,6 +16,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.naive_bayes import GaussianNB
 from sklearn import preprocessing
 from sklearn.metrics import f1_score
+from sklearn.metrics import r2_score
 import pandas as pd
 from sklearn.feature_selection import SelectFromModel
 from sklearn.feature_selection import RFECV
@@ -27,6 +27,8 @@ from sklearn.feature_selection import chi2
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import confusion_matrix
+
 
 
 X = []
@@ -159,6 +161,29 @@ def predictAndGetResults(model, toPrint, isRegression=False):
     print(f"Accuracy: {numCorrect/numTotal}")
     if isRegression:
         print(f"Average error in pt differential: {totalError / numTotal}")
+        r_score = r2_score(Y_test_predict, predictions)
+        print(f"Unadjusted R^2: {r_score}")
+        n = len(predictions)
+        k = len(X_train_minmax[0])
+        adjusted_r2 = 1-((1 - r_score) * (n-1) / (n-k-1))
+        print(f"Adjusted R^2: {adjusted_r2}")
+    else:
+        cm = confusion_matrix(Y_test_predict, predictions)
+        tn, fp, fn, tp = cm.ravel()
+        print("Confusion Matrix")
+        print("=============================================")
+        print(f"True Positives: {tp}  | True Negatives: {tn}")
+        print("---------------------------------------------")
+        print(f"False Positives: {fp} | False Negatives: {fn}")
+        print()
+        print(f"Accuracy: {(tp + tn) / (tp + tn + fp + fn)}")
+        print(f"Precision: {(tp)/(tp + fp)}")
+        print(f"Recall: {(tp)/(tp + fn)}")
+        print()
+        cv = KFold(n_splits=10, random_state=1, shuffle=True)
+        scores = cross_val_score(model, X, [1 if y > 0 else 0 for y in Y], scoring='accuracy', cv=cv, n_jobs=-1)
+        print('K_FOLD Accuracy (STD_DEV): %.3f (%.3f)' % (mean(scores), std(scores)))
+        print()
     print()
 
 def multipleModelPrediction(models, toPrint, isRegression=False):
@@ -180,7 +205,6 @@ def multipleModelPrediction(models, toPrint, isRegression=False):
     for predictions in all_predictions:
         score = f1_score(Y_test_predict, predictions)
         f1_scores.append(score)
-    print(f1_scores)
     score_sum = sum(f1_scores)
     voting_weights = [x / score_sum for x in f1_scores]
     
@@ -213,6 +237,21 @@ def multipleModelPrediction(models, toPrint, isRegression=False):
         print(f"Average error in pt differential: {totalError / numTotal}")
     score = f1_score(Y_test_predict, predictions)
     print(f"F1_Score: {score}")
+    cm = confusion_matrix(Y_test_predict, predictions)
+    tn, fp, fn, tp = cm.ravel()
+    print("Confusion Matrix")
+    print("=============================================")
+    print(f"True Positives: {tp}  | True Negatives: {tn}")
+    print("---------------------------------------------")
+    print(f"False Positives: {fp} | False Negatives: {fn}")
+    print()
+    print(f"Accuracy: {(tp + tn) / (tp + tn + fp + fn)}")
+    print(f"Precision: {(tp)/(tp + fp)}")
+    print(f"Recall: {(tp)/(tp + fn)}")
+    print()
+    cv = KFold(n_splits=10, random_state=1, shuffle=True)
+    scores = cross_val_score(model, X, [1 if y > 0 else 0 for y in Y], scoring='accuracy', cv=cv, n_jobs=-1)
+    print('K_FOLD Accuracy (STD_DEV): %.3f (%.3f)' % (mean(scores), std(scores)))
     print()
 
 print("===========================================================")
@@ -222,11 +261,11 @@ predictAndGetResults(randForest, "Random Forest")
 logReg = LogisticRegression()
 predictAndGetResults(logReg, "Logistical Regression - Classification")
 
-logReg = LogisticRegression()
-predictAndGetResults(logReg, "Logistical Regression - Regression", isRegression=True)
+# logReg = LogisticRegression()
+# predictAndGetResults(logReg, "Logistical Regression - Regression", isRegression=True)
 
-linReg = LinearRegression()
-predictAndGetResults(linReg, "Linear Regression - Classification")
+# linReg = LinearRegression()
+# predictAndGetResults(linReg, "Linear Regression - Classification")
 
 linReg = LinearRegression()
 predictAndGetResults(linReg, "Linear Regression - Regression", isRegression=True)
@@ -263,8 +302,6 @@ logReg = LogisticRegression()
 knn = KNeighborsClassifier(n_neighbors=11)
 naiveBayes = GaussianNB()
 multipleModelPrediction([randForest, logReg, knn, naiveBayes], "Rand Forest + Log Reg + KNN (11) + NB")
-
-
 
 # # Code for plotting data for the home_pts_diff and home_pts_diff_as_home against result
 # fig = plt.figure(figsize=(4,4))
