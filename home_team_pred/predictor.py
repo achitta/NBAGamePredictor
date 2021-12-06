@@ -33,7 +33,7 @@ from sklearn.metrics import confusion_matrix
 
 X = []
 Y = []
-feature_select = sys.argv[1] # STANDARD, RFE, P_VALS, PCA, TOP_5
+feature_select = sys.argv[1] # STANDARD, RFE, P_VAL, PCA, TOP_5
 normalize = sys.argv[2] # NORM / RAW
 print(f"Passed in args: {feature_select} {normalize}")
 
@@ -180,9 +180,9 @@ def predictAndGetResults(model, toPrint, isRegression=False):
         print(f"Precision: {(tp)/(tp + fp)}")
         print(f"Recall: {(tp)/(tp + fn)}")
         print()
-        cv = KFold(n_splits=10, random_state=1, shuffle=True)
-        scores = cross_val_score(model, X, [1 if y > 0 else 0 for y in Y], scoring='accuracy', cv=cv, n_jobs=-1)
-        print('K_FOLD Accuracy (STD_DEV): %.3f (%.3f)' % (mean(scores), std(scores)))
+        # cv = KFold(n_splits=10, random_state=1, shuffle=True)
+        # scores = cross_val_score(model, X, [1 if y > 0 else 0 for y in Y], scoring='accuracy', cv=cv, n_jobs=-1)
+        # print('K_FOLD Accuracy (STD_DEV): %.3f (%.3f)' % (mean(scores), std(scores)))
         print()
     print()
 
@@ -249,9 +249,9 @@ def multipleModelPrediction(models, toPrint, isRegression=False):
     print(f"Precision: {(tp)/(tp + fp)}")
     print(f"Recall: {(tp)/(tp + fn)}")
     print()
-    cv = KFold(n_splits=10, random_state=1, shuffle=True)
-    scores = cross_val_score(model, X, [1 if y > 0 else 0 for y in Y], scoring='accuracy', cv=cv, n_jobs=-1)
-    print('K_FOLD Accuracy (STD_DEV): %.3f (%.3f)' % (mean(scores), std(scores)))
+    # cv = KFold(n_splits=10, random_state=1, shuffle=True)
+    # scores = cross_val_score(model, X, [1 if y > 0 else 0 for y in Y], scoring='accuracy', cv=cv, n_jobs=-1)
+    # print('K_FOLD Accuracy (STD_DEV): %.3f (%.3f)' % (mean(scores), std(scores)))
     print()
 
 print("===========================================================")
