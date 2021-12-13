@@ -24,6 +24,8 @@ from sklearn.feature_selection import SelectKBest
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import confusion_matrix
+import pandas as pd
+import matplotlib.pyplot as plt
 
 
 
@@ -318,3 +320,18 @@ multipleModelPrediction([randForest, logReg, knn, naiveBayes], "Rand Forest + Lo
 # logit_model=sm.Logit(Y_train_binary,X_train_minmax)
 # result=logit_model.fit()
 # print(result.summary())
+
+# # Code to generate feature importance graphs
+# feature_names = [header[i+5] for i in range(X_train_minmax.shape[1])]
+# forest = RandomForestClassifier(random_state=0)
+# forest.fit(X_train_minmax, Y_train_binary)
+# importances = forest.feature_importances_
+# std_dev = np.std([tree.feature_importances_ for tree in forest.estimators_], axis=0)
+# forest_importances = pd.Series(importances, index=feature_names)
+
+# fig, ax = plt.subplots()
+# forest_importances.plot.bar(yerr=std_dev, ax=ax)
+# ax.set_title("Feature importances using MDI")
+# ax.set_ylabel("Mean decrease in impurity")
+# fig.tight_layout()
+# plt.show()
