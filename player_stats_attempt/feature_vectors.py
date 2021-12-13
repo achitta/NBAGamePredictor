@@ -120,11 +120,11 @@ for i, row in enumerate(X_test_transpose):
 
 X_test_normalized = np.transpose(X_test_transpose)
 
-neigh = KNeighborsClassifier(n_neighbors=3, weights="distance")
-neigh.fit(X_train_normalized, Y_train)
-predictions = neigh.predict(X_test_normalized)
-# clf = LogisticRegression(random_state=0).fit(X_train_normalized, Y_train)
-# predictions = clf.predict(X_test_normalized)
+# neigh = KNeighborsClassifier(n_neighbors=3, weights="distance")
+# neigh.fit(X_train_normalized, Y_train)
+# predictions = neigh.predict(X_test_normalized)
+clf = LogisticRegression(random_state=0).fit(X_train_normalized, Y_train)
+predictions = clf.predict(X_test_normalized)
 
 
 num_correct = 0

@@ -17,14 +17,10 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn import preprocessing
 from sklearn.metrics import f1_score
 from sklearn.metrics import r2_score
-import pandas as pd
 from sklearn.feature_selection import SelectFromModel
 from sklearn.feature_selection import RFECV
-import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import chi2
-from mpl_toolkits.mplot3d import Axes3D
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import confusion_matrix
@@ -33,9 +29,12 @@ from sklearn.metrics import confusion_matrix
 
 X = []
 Y = []
-feature_select = sys.argv[1] # STANDARD, RFE, P_VAL, PCA, TOP_5
-normalize = sys.argv[2] # NORM / RAW
-print(f"Passed in args: {feature_select} {normalize}")
+try:
+    feature_select = sys.argv[1] # STANDARD, RFE, P_VAL, PCA, TOP_5
+except:
+    feature_select = "STANDARD"
+
+print(f"Passed in args: {feature_select}")
 
 header = ["date","home_team","home_pts","visitor_team","visitor_pts","home_pts_total","visit_pts_total","home_pts_total_as_home","visit_pts_total_as_away","home_pts_diff","visit_pts_diff","home_pts_diff_as_home","visitor_pts_diff_as_away","home_wl_perc","visit_wl_perc","home_wl_as_home","visit_wl_as_away","home_play_yest","visit_play_yest","home_3_in_4","visit_3_in_4","home_2_in_3","visit_2_in_3","home_num_stars", "visitor_num_stars", "season_WL_home", "season_WL_visitor", "home_WL_against_visitor", "result"]
 with open("features.csv", newline='') as f:
@@ -59,7 +58,7 @@ with open("features.csv", newline='') as f:
                     x_rfecv.append(x[i])
             x = x_rfecv
 
-        # USING P VALUES 
+        # USING P VALUES
         # 5,6,7,13,14,18,19,20,21,22
         if feature_select == "P_VAL":
             x_p_values = []
@@ -77,6 +76,10 @@ with open("features.csv", newline='') as f:
         x = [float(a) for a in x]
         y = float(row[-1])
 
+        # Data cleaning: If any of home_pts_total, visit_points_total, home_points_as_home,or visitor_points_as_away are 0
+        # then we want to ignore this data point. Considering that these values would never be 0 in a real NBA setting, 
+        # they might throw off the normalization factors and the rest of the prediciton. To avoid issues, we simply threw
+        # these data points out (less than 50 in the overall dataset of ~24,500 data points)
         if feature_select == "STANDARD" and (x[0] == 0 or x[1] == 0 or x[2] == 0 or x[3] == 0):
             continue
 
@@ -86,8 +89,10 @@ with open("features.csv", newline='') as f:
         X.append(x)
         Y.append(y)
 
+# 80-20 test train split
 X_train_raw, X_test_raw, Y_train, Y_test = train_test_split(X, Y, test_size=0.20, random_state=42)
 
+# Create binary representations of the labels (win = 1, loss = 0)
 Y_train_binary = []
 Y_test_binary = []
 for val in Y_train:
@@ -105,17 +110,18 @@ for val in Y_test:
 # Normalize data
 X_train_minmax = X_train_raw
 X_test_minmax = X_test_raw
-if normalize == "NORM":
-    min_max_scaler = preprocessing.MinMaxScaler()
-    X_train_minmax = min_max_scaler.fit_transform(X_train_raw)
-    X_test_minmax = min_max_scaler.transform(X_test_raw)
+min_max_scaler = preprocessing.MinMaxScaler()
+X_train_minmax = min_max_scaler.fit_transform(X_train_raw)
+X_test_minmax = min_max_scaler.transform(X_test_raw)
 
+# Feature elim using PCA
 if feature_select == "PCA":
     pca = PCA(n_components=10)
     pca.fit(X_train_minmax)
     X_train_minmax = pca.transform(X_train_minmax)
     X_test_minmax = pca.transform(X_test_minmax)
 
+# Feature elim using top 5 based on ANOVA F-test
 if feature_select == "TOP_5":
     test = SelectKBest(k=5)
     fit = test.fit(X_train_minmax, Y_train_binary)
@@ -133,7 +139,7 @@ if feature_select == "TOP_5":
         print(elt[2])
     print()
 
-
+# Train the model on the training data and compute accuracy and confusion matrix on test set
 def predictAndGetResults(model, toPrint, isRegression=False):
     print(toPrint)
     if isRegression:
@@ -143,9 +149,11 @@ def predictAndGetResults(model, toPrint, isRegression=False):
         Y_train_predict = Y_train_binary
         Y_test_predict = Y_test_binary
     
+    # Train model and generate predictions
     model.fit(X_train_minmax, Y_train_predict)
     predictions = model.predict(X_test_minmax)
     
+    # Compute accuracy
     numCorrect = 0
     numTotal = 0
     totalError = 0
@@ -160,6 +168,7 @@ def predictAndGetResults(model, toPrint, isRegression=False):
         numTotal += 1 
     print(f"Accuracy: {numCorrect/numTotal}")
     if isRegression:
+        # Compute R^2 and Adjusted R^2 for linear regression
         print(f"Average error in pt differential: {totalError / numTotal}")
         r_score = r2_score(Y_test_predict, predictions)
         print(f"Unadjusted R^2: {r_score}")
@@ -168,6 +177,7 @@ def predictAndGetResults(model, toPrint, isRegression=False):
         adjusted_r2 = 1-((1 - r_score) * (n-1) / (n-k-1))
         print(f"Adjusted R^2: {adjusted_r2}")
     else:
+        # Compute confusion matrix for all classification models
         cm = confusion_matrix(Y_test_predict, predictions)
         tn, fp, fn, tp = cm.ravel()
         print("Confusion Matrix")
@@ -180,12 +190,15 @@ def predictAndGetResults(model, toPrint, isRegression=False):
         print(f"Precision: {(tp)/(tp + fp)}")
         print(f"Recall: {(tp)/(tp + fn)}")
         print()
-        # cv = KFold(n_splits=10, random_state=1, shuffle=True)
-        # scores = cross_val_score(model, X, [1 if y > 0 else 0 for y in Y], scoring='accuracy', cv=cv, n_jobs=-1)
-        # print('K_FOLD Accuracy (STD_DEV): %.3f (%.3f)' % (mean(scores), std(scores)))
+
+        # Use KFold cross validation as another validation step 
+        cv = KFold(n_splits=10, random_state=1, shuffle=True)
+        scores = cross_val_score(model, X, [1 if y > 0 else 0 for y in Y], scoring='accuracy', cv=cv, n_jobs=-1)
+        print('K_FOLD Accuracy (STD_DEV): %.3f (%.3f)' % (mean(scores), std(scores)))
         print()
     print()
 
+# Generate prediction accuracies for weighted multi-model
 def multipleModelPrediction(models, toPrint, isRegression=False):
     print(toPrint)
     if isRegression:
@@ -201,6 +214,7 @@ def multipleModelPrediction(models, toPrint, isRegression=False):
         predictions = model.predict(X_test_minmax)
         all_predictions.append(predictions)
     
+    # Use f1_scores to assign voting power to each underlying model
     f1_scores = []
     for predictions in all_predictions:
         score = f1_score(Y_test_predict, predictions)
@@ -208,6 +222,7 @@ def multipleModelPrediction(models, toPrint, isRegression=False):
     score_sum = sum(f1_scores)
     voting_weights = [x / score_sum for x in f1_scores]
     
+    # Generate a weighted prediction
     final_predictions = []
     numCols = len(models)
     numRows = len(Y_test_predict)
@@ -220,6 +235,7 @@ def multipleModelPrediction(models, toPrint, isRegression=False):
         else:
             final_predictions.append(0)
 
+    # Calculate accuracy
     numCorrect = 0
     numTotal = 0
     totalError = 0
@@ -249,9 +265,9 @@ def multipleModelPrediction(models, toPrint, isRegression=False):
     print(f"Precision: {(tp)/(tp + fp)}")
     print(f"Recall: {(tp)/(tp + fn)}")
     print()
-    # cv = KFold(n_splits=10, random_state=1, shuffle=True)
-    # scores = cross_val_score(model, X, [1 if y > 0 else 0 for y in Y], scoring='accuracy', cv=cv, n_jobs=-1)
-    # print('K_FOLD Accuracy (STD_DEV): %.3f (%.3f)' % (mean(scores), std(scores)))
+    cv = KFold(n_splits=10, random_state=1, shuffle=True)
+    scores = cross_val_score(model, X, [1 if y > 0 else 0 for y in Y], scoring='accuracy', cv=cv, n_jobs=-1)
+    print('K_FOLD Accuracy (STD_DEV): %.3f (%.3f)' % (mean(scores), std(scores)))
     print()
 
 print("===========================================================")
@@ -260,12 +276,6 @@ predictAndGetResults(randForest, "Random Forest")
 
 logReg = LogisticRegression()
 predictAndGetResults(logReg, "Logistical Regression - Classification")
-
-# logReg = LogisticRegression()
-# predictAndGetResults(logReg, "Logistical Regression - Regression", isRegression=True)
-
-# linReg = LinearRegression()
-# predictAndGetResults(linReg, "Linear Regression - Classification")
 
 linReg = LinearRegression()
 predictAndGetResults(linReg, "Linear Regression - Regression", isRegression=True)
@@ -302,39 +312,6 @@ logReg = LogisticRegression()
 knn = KNeighborsClassifier(n_neighbors=11)
 naiveBayes = GaussianNB()
 multipleModelPrediction([randForest, logReg, knn, naiveBayes], "Rand Forest + Log Reg + KNN (11) + NB")
-
-# # Code for plotting data for the home_pts_diff and home_pts_diff_as_home against result
-# fig = plt.figure(figsize=(4,4))
-# ax = fig.add_subplot(111, projection='3d')
-# fourthColumn = []
-# sixthColumn = []
-# for idx, row in enumerate(X_train_minmax):
-#     if idx % 50 == 0:
-#         ax.scatter(row[0], row[1], Y_train[idx])
-# plt.show()
-
-
-# # Code for generating feature coefficients graph for rfe
-# clf = RandomForestClassifier()
-# cv_selector = RFECV(clf)
-# cv_selector = cv_selector.fit(X_train_minmax, Y_train_binary)
-# rfecv_mask = cv_selector.get_support() #list of booleans
-# rfecv_features = [] 
-# coefs = []
-# for bool, feature, coeff in zip(rfecv_mask, header[5:-1], clf.coef_[0]):
-#     if bool:
-#         rfecv_features.append(feature)
-#         coefs.append(coeff)
-
-# print(f"Optimal number of features : {cv_selector.n_features_}")
-# print(f"Best features : {rfecv_features}")
-# n_features = X_train_minmax.shape[1]
-# plt.figure(figsize=(8,8))
-# plt.barh(range(n_features), coeff, align='center') 
-# # plt.yticks(np.arange(n_features), X_train_minmax.columns.values) 
-# plt.xlabel('Feature importance')
-# plt.ylabel('Feature')
-# plt.show()
 
 # # Code to generate p-vals
 # import statsmodels.api as sm
