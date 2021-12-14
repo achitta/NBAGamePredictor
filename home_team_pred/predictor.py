@@ -194,10 +194,10 @@ def predictAndGetResults(model, toPrint, isRegression=False):
         print()
 
         # Use KFold cross validation as another validation step 
-        cv = KFold(n_splits=5, random_state=1, shuffle=True)
-        scores = cross_val_score(model, X, [1 if y > 0 else 0 for y in Y], scoring='accuracy', cv=cv, n_jobs=-1)
-        print('K_FOLD Accuracy (STD_DEV): %.3f (%.3f)' % (mean(scores), std(scores)))
-        print()
+        # cv = KFold(n_splits=5, random_state=1, shuffle=True)
+        # scores = cross_val_score(model, X, [1 if y > 0 else 0 for y in Y], scoring='accuracy', cv=cv, n_jobs=-1)
+        # print('K_FOLD Accuracy (STD_DEV): %.3f (%.3f)' % (mean(scores), std(scores)))
+        # print()
     print()
 
 # Generate prediction accuracies for weighted multi-model
@@ -276,10 +276,10 @@ def multipleModelPrediction(models, toPrint, isRegression=False):
     print(f"Precision: {(tp)/(tp + fp)}")
     print(f"Recall: {(tp)/(tp + fn)}")
     print()
-    cv = KFold(n_splits=5, random_state=1, shuffle=True)
-    scores = cross_val_score(model, X, [1 if y > 0 else 0 for y in Y], scoring='accuracy', cv=cv, n_jobs=-1)
-    print('K_FOLD Accuracy (STD_DEV): %.3f (%.3f)' % (mean(scores), std(scores)))
-    print()
+    # cv = KFold(n_splits=5, random_state=1, shuffle=True)
+    # scores = cross_val_score(model, X, [1 if y > 0 else 0 for y in Y], scoring='accuracy', cv=cv, n_jobs=-1)
+    # print('K_FOLD Accuracy (STD_DEV): %.3f (%.3f)' % (mean(scores), std(scores)))
+    # print()
 
 print("===========================================================")
 randForest = RandomForestClassifier()
