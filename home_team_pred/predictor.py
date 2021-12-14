@@ -194,7 +194,7 @@ def predictAndGetResults(model, toPrint, isRegression=False):
         print()
 
         # Use KFold cross validation as another validation step 
-        cv = KFold(n_splits=10, random_state=1, shuffle=True)
+        cv = KFold(n_splits=5, random_state=1, shuffle=True)
         scores = cross_val_score(model, X, [1 if y > 0 else 0 for y in Y], scoring='accuracy', cv=cv, n_jobs=-1)
         print('K_FOLD Accuracy (STD_DEV): %.3f (%.3f)' % (mean(scores), std(scores)))
         print()
@@ -210,20 +210,29 @@ def multipleModelPrediction(models, toPrint, isRegression=False):
         Y_train_predict = Y_train_binary
         Y_test_predict = Y_test_binary
     
+    X_train_minmax_cp = X_train_minmax.copy()
+    Y_train_cp = Y_train_predict.copy()
+    X_train_train, X_train_validation, Y_train_train, Y_train_validation = train_test_split(X_train_minmax_cp, Y_train_cp, test_size=0.20, random_state=12)
+
     all_predictions = []
     for model in models:
-        model.fit(X_train_minmax, Y_train_predict)
-        predictions = model.predict(X_test_minmax)
+        model.fit(X_train_train, Y_train_train)
+        predictions = model.predict(X_train_validation)
         all_predictions.append(predictions)
     
     # Use f1_scores to assign voting power to each underlying model
     f1_scores = []
     for predictions in all_predictions:
-        score = f1_score(Y_test_predict, predictions)
+        score = f1_score(Y_train_validation, predictions)
         f1_scores.append(score)
     score_sum = sum(f1_scores)
     voting_weights = [x / score_sum for x in f1_scores]
     
+    all_predictions = []
+    for model in models:
+        model.fit(X_train_train, Y_train_train)
+        predictions = model.predict(X_test_minmax)
+        all_predictions.append(predictions)
     # Generate a weighted prediction
     final_predictions = []
     numCols = len(models)
@@ -267,7 +276,7 @@ def multipleModelPrediction(models, toPrint, isRegression=False):
     print(f"Precision: {(tp)/(tp + fp)}")
     print(f"Recall: {(tp)/(tp + fn)}")
     print()
-    cv = KFold(n_splits=10, random_state=1, shuffle=True)
+    cv = KFold(n_splits=5, random_state=1, shuffle=True)
     scores = cross_val_score(model, X, [1 if y > 0 else 0 for y in Y], scoring='accuracy', cv=cv, n_jobs=-1)
     print('K_FOLD Accuracy (STD_DEV): %.3f (%.3f)' % (mean(scores), std(scores)))
     print()

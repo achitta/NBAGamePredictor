@@ -30,12 +30,21 @@ The options for feature elimination are as follows:
 ## Code Breakdown
 
 ### scrape.py
+```
+$ python3 scrape.py
+```
 **Description:** Scrape raw game data (date, home team, home points, visiting team, visiting points) from `https://www.basketball-reference.com/leagues/NBA_{year}_games-{month}.html` for all games from the 2000-01 season to the 2018-19 season and output to `data.csv` in the format of `date, visitor_team, visitor_pts, home_team, home_pts`.
 
 ### scrape_all_stars.py
+```
+$ python3 scrape_all_star.py
+```
 **Description:** Scrape raw all-star data from `https://basketball.realgm.com/nba/allstar/game/rosters/{year}` for each year between 2000 and 2018 (we care about the all stars from the season prior to the one in consideration) and output to `all_stars.csv` in the format of `Season, Player, Team`.
 
 ### features.py
+```
+$ python3 features.py
+```
 **Description:** Featurize the raw data
 The features we selected for this project are:
 - `home_pts_total`: average points scored by home team in last 10 games
@@ -73,12 +82,21 @@ The functions within this script can be split into a few categories:
 These functions are used to compute the various features defined above in this project.
 
 ### predictor.py
+```
+$ python3 predictor.py
+```
 **Description:** Train and test models.
 This script accomplishes the following tasks:
 1. Splitting `features.csv` into a test and train split of 80-20
 1. Computing the accuracies and other evaluation metrics of each model
 1. Computing the accuracies and other evaluation metrics for the weighted multi model
 There are in-line comments that explain some of the smaller implementation details
+
+### data_analysis.py
+```
+$ python3 data_analysis.py
+```
+**Description:** Computes the number of each class. Used to see if there are any biases in the data classifications
 
 
 ## Side Note about `player_stats_attempt/`
